@@ -79,3 +79,9 @@ hs_err_pid*
 # Application specific
 logs/*.log
 logs/*.pid
+
+# Development/Personal files
+TODO.md
+TODO.txt
+NOTES.md
+NOTES.txt
