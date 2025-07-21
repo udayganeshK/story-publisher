@@ -1,0 +1,30 @@
+{
+    "folders": [
+        {
+            "name": "Frontend",
+            "path": "./frontend"
+        },
+        {
+            "name": "Backend",
+            "path": "./backend"
+        }
+    ],
+    "settings": {
+        "java.configuration.workspaceCacheLimit": 90,
+        "java.import.maven.enabled": true,
+        "java.maven.downloadSources": true,
+        "java.sources.organizeImports.starThreshold": 99,
+        "java.sources.organizeImports.staticStarThreshold": 99,
+        "java.configuration.detectJdksAtStart": true,
+        "java.compile.nullAnalysis.mode": "automatic"
+    },
+    "extensions": {
+        "recommendations": [
+            "vscjava.vscode-java-pack",
+            "vmware.vscode-spring-boot",
+            "vscjava.vscode-spring-initializr",
+            "bradlc.vscode-tailwindcss",
+            "esbenp.prettier-vscode"
+        ]
+    }
+}

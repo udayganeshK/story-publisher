@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Auth</title>
+</head>
+<body>
+    <h1>Setting Auth Token for Testing</h1>
+    <script>
+        // Set the auth token
+        document.cookie = "auth_token=Bearer-testuser2-89ec56ce-8ea6-4530-a355-5f588161df00; path=/; max-age=86400";
+        console.log("Auth token set:", document.cookie);
+        
+        // Redirect to dashboard
+        setTimeout(() => {
+            window.location.href = 'http://localhost:3000/dashboard';
+        }, 1000);
+    </script>
+    <p>Setting auth token and redirecting to dashboard...</p>
+</body>
+</html>
