@@ -25,7 +25,7 @@ import com.storypublisher.service.StoryService;
 
 @RestController
 @RequestMapping("/stories")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:6001"})
 public class StoryController {
     
     @Autowired

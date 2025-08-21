@@ -117,7 +117,13 @@ const LoginPage: React.FC = () => {
             </button>
           </div>
 
-          <div className="text-center">
+          <div className="flex items-center justify-between">
+            <Link
+              href="/forgot-password"
+              className="text-sm text-blue-600 hover:text-blue-500"
+            >
+              Forgot your password?
+            </Link>
             <Link href="/" className="text-sm text-blue-600 hover:text-blue-500">
               ← Back to home
             </Link>

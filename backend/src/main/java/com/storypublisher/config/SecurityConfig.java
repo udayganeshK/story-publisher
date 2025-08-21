@@ -58,7 +58,7 @@ public class SecurityConfig {
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/auth/login", "/auth/signup").permitAll()
+                .requestMatchers("/auth/login", "/auth/signup", "/auth/forgot-password", "/auth/reset-password", "/auth/validate-reset-token").permitAll()
                 .requestMatchers("/auth/profile").authenticated()
                 .requestMatchers(HttpMethod.GET, "/stories/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()

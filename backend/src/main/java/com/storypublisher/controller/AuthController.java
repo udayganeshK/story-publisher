@@ -12,21 +12,25 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.storypublisher.dto.ForgotPasswordRequest;
 import com.storypublisher.dto.JwtAuthenticationResponse;
 import com.storypublisher.dto.LoginRequest;
+import com.storypublisher.dto.ResetPasswordRequest;
 import com.storypublisher.dto.SignupRequest;
 import com.storypublisher.dto.UserResponse;
 import com.storypublisher.model.User;
 import com.storypublisher.security.JwtTokenProvider;
+import com.storypublisher.service.PasswordResetService;
 import com.storypublisher.service.UserService;
 
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:6001"})
 public class AuthController {
     
     @Autowired
@@ -37,6 +41,9 @@ public class AuthController {
     
     @Autowired
     private JwtTokenProvider tokenProvider;
+    
+    @Autowired
+    private PasswordResetService passwordResetService;
     
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
@@ -86,5 +93,39 @@ public class AuthController {
     @GetMapping("/profile")
     public ResponseEntity<UserResponse> getCurrentUser(@AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(new UserResponse(currentUser));
+    }
+    
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        try {
+            passwordResetService.initiatePasswordReset(request);
+            return ResponseEntity.ok("Password reset link sent to your email.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
+    }
+    
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        try {
+            passwordResetService.resetPassword(request);
+            return ResponseEntity.ok("Password has been reset successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
+    }
+    
+    @GetMapping("/validate-reset-token")
+    public ResponseEntity<?> validateResetToken(@RequestParam String token) {
+        try {
+            boolean isValid = passwordResetService.validateResetToken(token);
+            if (isValid) {
+                return ResponseEntity.ok("Token is valid.");
+            } else {
+                return ResponseEntity.badRequest().body("Invalid or expired token.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
     }
 }

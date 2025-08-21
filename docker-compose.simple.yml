@@ -1,0 +1,73 @@
+# Simple EC2 Docker Compose for Budget Deployment
+version: '3.8'
+
+services:
+  database:
+    image: postgres:15-alpine
+    container_name: storypublisher-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-storypublisher}
+      POSTGRES_USER: ${POSTGRES_USER:-storypublisher}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-storypublisher}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: storypublisher-backend
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://database:5432/${POSTGRES_DB:-storypublisher}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-storypublisher}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - APP_JWT_SECRET=${JWT_SECRET:-StoryPublisherSecretKeyForJWTTokenGenerationAndValidation2025}
+      - APP_CORS_ALLOWED_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+    ports:
+      - "8080:8080"
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: storypublisher-frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8080/api}
+      - NODE_ENV=production
+    ports:
+      - "80:3000"  # Serve on port 80 for web access
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Optional: Nginx reverse proxy for better performance
+  nginx:
+    image: nginx:alpine
+    container_name: storypublisher-nginx
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

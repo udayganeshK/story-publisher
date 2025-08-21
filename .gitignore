@@ -85,3 +85,14 @@ TODO.md
 TODO.txt
 NOTES.md
 NOTES.txt
+
+# Sensitive files - AWS & SSH keys
+*.pem
+*_rsa
+*_rsa.pub
+*.pkg
+AWSCLIV2.pkg
+
+# Local application properties with credentials
+application-local.properties
+application-dev.properties
