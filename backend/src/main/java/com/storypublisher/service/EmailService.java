@@ -97,30 +97,47 @@ public class EmailService {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Reset Your Password</title>
                 <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background-color: #4f46e5; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff; }
+                    .header { background-color: #1e40af; color: #ffffff; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
                     .content { background-color: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
-                    .button { display: inline-block; padding: 12px 24px; background-color: #4f46e5; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }
+                    .button { 
+                        display: inline-block; 
+                        padding: 14px 28px; 
+                        background-color: #1e40af; 
+                        color: #ffffff !important; 
+                        text-decoration: none !important; 
+                        border-radius: 6px; 
+                        font-weight: bold; 
+                        font-size: 16px; 
+                        margin: 20px 0; 
+                        border: 2px solid #1e40af;
+                        text-align: center;
+                        min-width: 200px;
+                    }
+                    .button:hover { background-color: #1d4ed8; border-color: #1d4ed8; }
                     .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280; }
+                    .link-fallback { word-break: break-all; color: #1e40af; }
                 </style>
             </head>
             <body>
                 <div class="header">
-                    <h1>🔐 Password Reset Request</h1>
+                    <h1 style="color: #ffffff; margin: 0;">🔐 Password Reset Request</h1>
                 </div>
                 <div class="content">
-                    <h2>Hello!</h2>
+                    <h2 style="color: #1f2937;">Hello!</h2>
                     <p>You have requested to reset your password for your Story Publisher account.</p>
                     <p>Click the button below to reset your password:</p>
-                    <div style="text-align: center;">
-                        <a href="%s" class="button">Reset My Password</a>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="%s" class="button" style="color: #ffffff !important; text-decoration: none !important;">
+                            Reset My Password
+                        </a>
                     </div>
-                    <p><strong>This link will expire in 1 hour</strong> for security reasons.</p>
+                    <p><strong style="color: #dc2626;">⏰ This link will expire in 1 hour</strong> for security reasons.</p>
                     <p>If you didn't request this password reset, please ignore this email. Your password will remain unchanged.</p>
                     <div class="footer">
-                        <p>If the button doesn't work, copy and paste this link into your browser:<br>
-                        <a href="%s">%s</a></p>
-                        <p>© 2025 Story Publisher. All rights reserved.</p>
+                        <p><strong>If the button doesn't work, copy and paste this link into your browser:</strong></p>
+                        <p class="link-fallback"><a href="%s" style="color: #1e40af;">%s</a></p>
+                        <p style="margin-top: 20px;">© 2025 Story Publisher. All rights reserved.</p>
                     </div>
                 </div>
             </body>

@@ -48,6 +48,36 @@ const StoriesPage: React.FC = () => {
     });
   };
 
+  const generateExcerpt = (story: Story): string => {
+    // If excerpt exists, use it
+    if (story.excerpt && story.excerpt.trim()) {
+      return story.excerpt;
+    }
+    
+    // If no excerpt, generate from content
+    if (story.content && story.content.trim()) {
+      // Remove HTML tags if any and clean up the text
+      const cleanContent = story.content.replace(/<[^>]*>/g, '').trim();
+      
+      // Take first 150 characters and ensure we don't cut words
+      if (cleanContent.length <= 150) {
+        return cleanContent;
+      }
+      
+      const truncated = cleanContent.substring(0, 150);
+      const lastSpaceIndex = truncated.lastIndexOf(' ');
+      
+      if (lastSpaceIndex > 100) { // Only break at word boundary if it's reasonable
+        return truncated.substring(0, lastSpaceIndex) + '...';
+      }
+      
+      return truncated + '...';
+    }
+    
+    // Fallback if no content
+    return 'No preview available.';
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -136,7 +166,7 @@ const StoriesPage: React.FC = () => {
 
                   {/* Story Excerpt */}
                   <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3">
-                    {story.excerpt || 'No excerpt available.'}
+                    {generateExcerpt(story)}
                   </p>
 
                   {/* Story Metadata */}

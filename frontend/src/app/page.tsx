@@ -48,6 +48,36 @@ const HomePage: React.FC = () => {
     });
   };
 
+  const generateExcerpt = (story: Story): string => {
+    // If excerpt exists, use it
+    if (story.excerpt && story.excerpt.trim()) {
+      return story.excerpt;
+    }
+    
+    // If no excerpt, generate from content
+    if (story.content && story.content.trim()) {
+      // Remove HTML tags if any and clean up the text
+      const cleanContent = story.content.replace(/<[^>]*>/g, '').trim();
+      
+      // Take first 120 characters for homepage (shorter than stories page)
+      if (cleanContent.length <= 120) {
+        return cleanContent;
+      }
+      
+      const truncated = cleanContent.substring(0, 120);
+      const lastSpaceIndex = truncated.lastIndexOf(' ');
+      
+      if (lastSpaceIndex > 80) { // Only break at word boundary if it's reasonable
+        return truncated.substring(0, lastSpaceIndex) + '...';
+      }
+      
+      return truncated + '...';
+    }
+    
+    // Fallback if no content
+    return 'No preview available.';
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -124,13 +154,20 @@ const HomePage: React.FC = () => {
                 <div className="h-40 bg-gradient-to-br from-blue-50 to-indigo-100 relative">
                   <div className="absolute inset-0 bg-black bg-opacity-10"></div>
                   <div className="absolute bottom-3 left-3 right-3">
-                    <h3 className="text-lg font-bold text-gray-900 line-clamp-2">
-                      {story.title}
+                    <h3 className="text-lg font-bold text-white drop-shadow-lg line-clamp-2">
+                      {story.title || 'Untitled Story'}
                     </h3>
                   </div>
                 </div>
 
                 <div className="p-5">
+                  {/* Story Title Again for Visibility */}
+                  <div className="mb-3">
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">
+                      {story.title || 'Untitled Story'}
+                    </h2>
+                  </div>
+
                   {/* Author Info */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
@@ -159,9 +196,7 @@ const HomePage: React.FC = () => {
 
                   {/* Story Excerpt */}
                   <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3">
-                    {story.excerpt || (story.content?.length > 120 
-                      ? `${story.content.substring(0, 120)}...` 
-                      : story.content) || 'No excerpt available.'}
+                    {generateExcerpt(story)}
                   </p>
 
                   {/* Story Metadata */}
