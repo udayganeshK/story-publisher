@@ -14,7 +14,7 @@ const StoriesPage: React.FC = () => {
   useEffect(() => {
     const fetchStories = async () => {
       try {
-        const publicStories = await storyService.getAllPublicStories();
+        const publicStories = await storyService.getAllPublicStoriesSimple();
         // Ensure we always have an array
         setStories(Array.isArray(publicStories) ? publicStories : []);
       } catch (err) {
@@ -121,11 +121,21 @@ const StoriesPage: React.FC = () => {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {stories.map((story) => (
               <article key={story.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-100 hover:border-gray-200">
-                {/* Cover Image Placeholder */}
-                <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-100 relative">
-                  <div className="absolute inset-0 bg-black bg-opacity-10"></div>
+                {/* Cover Image or Placeholder */}
+                <div className="h-48 relative">
+                  {story.coverImageUrl ? (
+                    <img
+                      src={story.coverImageUrl}
+                      alt={story.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-100">
+                      <div className="absolute inset-0 bg-gray-900 bg-opacity-5"></div>
+                    </div>
+                  )}
                   <div className="absolute bottom-4 left-4 right-4">
-                    <h2 className="text-xl font-bold text-gray-900 line-clamp-2 mb-2">
+                    <h2 className="text-xl font-bold text-white drop-shadow-lg line-clamp-2 mb-2">
                       {story.title}
                     </h2>
                   </div>

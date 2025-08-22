@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Story, CreateStoryRequest, UpdateStoryRequest } from '@/types/api';
-import { storyService } from '@/services/api';
+import { storyService, imageService } from '@/services/api';
 
 const WritePage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -13,12 +13,16 @@ const WritePage: React.FC = () => {
     content: '',
     status: 'DRAFT' as 'DRAFT' | 'PUBLISHED',
     privacy: 'PUBLIC' as 'PUBLIC' | 'PRIVATE',
+    coverImageUrl: '',
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [storyId, setStoryId] = useState<number | null>(null);
+  const [imageUploadEnabled, setImageUploadEnabled] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   
   const { isAuthenticated } = useAuth();
   const router = useRouter();
@@ -45,7 +49,11 @@ const WritePage: React.FC = () => {
             content: story.content,
             status: story.status === 'ARCHIVED' ? 'DRAFT' : story.status as 'DRAFT' | 'PUBLISHED',
             privacy: story.privacy,
+            coverImageUrl: story.coverImageUrl || '',
           });
+          if (story.coverImageUrl) {
+            setImagePreview(story.coverImageUrl);
+          }
         } catch (err) {
           setError('Failed to load story for editing');
           console.error('Error loading story:', err);
@@ -56,6 +64,19 @@ const WritePage: React.FC = () => {
 
       loadStory();
     }
+    
+    // Check if image upload is enabled
+    const checkImageConfig = async () => {
+      try {
+        const config = await imageService.getImageConfig();
+        setImageUploadEnabled(config.enabled);
+      } catch (err) {
+        console.error('Failed to check image config:', err);
+        setImageUploadEnabled(false);
+      }
+    };
+    
+    checkImageConfig();
   }, [isAuthenticated, router, params.id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -63,6 +84,40 @@ const WritePage: React.FC = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImageUploading(true);
+    setError(null);
+
+    try {
+      const result = await imageService.uploadImage(file);
+      if (result.success && result.imageUrl) {
+        setFormData({
+          ...formData,
+          coverImageUrl: result.imageUrl,
+        });
+        setImagePreview(result.imageUrl);
+      } else {
+        setError(result.message || 'Failed to upload image');
+      }
+    } catch (err) {
+      setError('Failed to upload image. Please try again.');
+      console.error('Image upload error:', err);
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setFormData({
+      ...formData,
+      coverImageUrl: '',
+    });
+    setImagePreview(null);
   };
 
   const handleSave = async (publish = false) => {
@@ -167,6 +222,58 @@ const WritePage: React.FC = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 resize-y text-gray-900 text-base leading-relaxed"
               />
             </div>
+
+            {/* Cover Image Upload */}
+            {imageUploadEnabled && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cover Image
+                </label>
+                <div className="flex items-center space-x-4">
+                  {imagePreview ? (
+                    <div className="relative">
+                      <img
+                        src={imagePreview}
+                        alt="Cover Image Preview"
+                        className="w-full h-auto rounded-md border border-gray-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                        title="Remove image"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500">
+                      No image uploaded
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex items-center space-x-3 mt-4">
+                  <label className="block text-sm font-medium text-gray-700">
+                    <span className="sr-only">Choose cover image</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="block w-full text-sm text-gray-900 file:py-2 file:px-4 file:border file:border-gray-300 file:rounded-md file:text-sm file:font-medium file:bg-gray-50 hover:file:bg-gray-100 transition-colors"
+                    />
+                  </label>
+                  
+                  {imageUploading && (
+                    <div className="text-sm text-gray-500">
+                      Uploading image...
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Settings */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

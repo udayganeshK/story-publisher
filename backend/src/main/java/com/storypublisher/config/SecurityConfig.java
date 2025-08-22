@@ -59,6 +59,9 @@ public class SecurityConfig {
             .and()
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/auth/login", "/auth/signup", "/auth/forgot-password", "/auth/reset-password", "/auth/validate-reset-token").permitAll()
+                .requestMatchers(HttpMethod.GET, "/images/**").permitAll()  // Allow image serving
+                .requestMatchers(HttpMethod.GET, "/images/config").permitAll()  // Allow image config check
+                .requestMatchers(HttpMethod.POST, "/images/upload").authenticated()  // Require auth for image upload
                 .requestMatchers("/auth/profile").authenticated()
                 .requestMatchers(HttpMethod.GET, "/stories/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()

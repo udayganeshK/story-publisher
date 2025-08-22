@@ -25,6 +25,9 @@ public class StoryService {
     @Autowired
     private StoryRepository storyRepository;
     
+    @Autowired
+    private ImageUploadService imageUploadService;
+    
     public Page<Story> getStoriesByAuthor(User author, Pageable pageable) {
         return storyRepository.findByAuthor(author, pageable);
     }
@@ -74,6 +77,16 @@ public class StoryService {
         Story existingStory = storyRepository.findByIdAndAuthor(id, currentUser)
                 .orElseThrow(() -> new RuntimeException("Story not found or access denied"));
         
+        // Handle cover image changes
+        String oldCoverImageUrl = existingStory.getCoverImageUrl();
+        String newCoverImageUrl = updatedStory.getCoverImageUrl();
+        
+        // If cover image is being changed and the old image was uploaded through our system, delete it
+        if (oldCoverImageUrl != null && !oldCoverImageUrl.equals(newCoverImageUrl) && 
+            imageUploadService.isValidImageUrl(oldCoverImageUrl)) {
+            imageUploadService.deleteImage(oldCoverImageUrl);
+        }
+        
         // Update allowed fields
         existingStory.setTitle(updatedStory.getTitle());
         existingStory.setContent(updatedStory.getContent());
@@ -88,6 +101,11 @@ public class StoryService {
     public void deleteStory(Long id, User currentUser) {
         Story story = storyRepository.findByIdAndAuthor(id, currentUser)
                 .orElseThrow(() -> new RuntimeException("Story not found or access denied"));
+        
+        // Delete associated cover image if it was uploaded through our system
+        if (story.getCoverImageUrl() != null && imageUploadService.isValidImageUrl(story.getCoverImageUrl())) {
+            imageUploadService.deleteImage(story.getCoverImageUrl());
+        }
         
         storyRepository.delete(story);
     }

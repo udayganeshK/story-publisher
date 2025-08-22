@@ -23,13 +23,18 @@ export const authService = {
 };
 
 export const storyService = {
-  async getAllPublicStories(): Promise<Story[]> {
-    const response = await api.get('/stories');
+  async getAllPublicStories(page: number = 0, size: number = 100): Promise<{ content: Story[], totalElements: number, totalPages: number }> {
+    const response = await api.get(`/stories?page=${page}&size=${size}`);
+    return response.data; // Return full paginated response
+  },
+
+  async getAllPublicStoriesSimple(): Promise<Story[]> {
+    const response = await api.get('/stories?size=200'); // Get up to 200 stories
     return response.data.content; // Extract content array from paginated response
   },
 
   async getMyStories(): Promise<Story[]> {
-    const response = await api.get('/stories/my');
+    const response = await api.get('/stories/my?size=200'); // Get up to 200 user stories
     return response.data.content; // Extract content array from paginated response
   },
 
@@ -65,6 +70,25 @@ export const storyService = {
 
   async unpublishStory(id: number): Promise<Story> {
     const response = await api.post(`/stories/${id}/unpublish`);
+    return response.data;
+  },
+};
+
+export const imageService = {
+  async getImageConfig(): Promise<{ enabled: boolean }> {
+    const response = await api.get('/images/config');
+    return response.data;
+  },
+
+  async uploadImage(file: File): Promise<{ success: boolean; imageUrl?: string; message: string }> {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const response = await api.post('/images/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 };

@@ -120,6 +120,21 @@ const StoryPage: React.FC = () => {
       
       <article className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+          {/* Cover Image */}
+          {story.coverImageUrl && (
+            <div className="w-full h-64 md:h-80 relative bg-gray-100 cursor-pointer group overflow-hidden" onClick={() => window.open(story.coverImageUrl, '_blank')}>
+              <img
+                src={story.coverImageUrl}
+                alt={story.title}
+                className="w-full h-full object-contain transition-opacity group-hover:opacity-90"
+                loading="lazy"
+              />
+              <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                Click to view full size
+              </div>
+            </div>
+          )}
+          
           {/* Header */}
           <div className="px-8 py-6 border-b border-gray-200">
             <div className="flex items-center space-x-4 mb-4">

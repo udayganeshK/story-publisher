@@ -19,6 +19,7 @@ export interface Story {
   slug?: string;
   status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
   privacy: 'PUBLIC' | 'PRIVATE';
+  coverImageUrl?: string;
   author: User;
   readTime: number;
   viewCount: number;
@@ -54,6 +55,7 @@ export interface CreateStoryRequest {
   content: string;
   status: 'DRAFT' | 'PUBLISHED';
   privacy: 'PUBLIC' | 'PRIVATE';
+  coverImageUrl?: string;
 }
 
 export interface UpdateStoryRequest {
@@ -61,6 +63,7 @@ export interface UpdateStoryRequest {
   content?: string;
   status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
   privacy?: 'PUBLIC' | 'PRIVATE';
+  coverImageUrl?: string;
 }
 
 export interface ApiError {
@@ -96,4 +99,15 @@ export interface PageableResponse<T> {
     empty: boolean;
   };
   empty: boolean;
+}
+
+// New interfaces for image upload
+export interface ImageUploadResponse {
+  success: boolean;
+  imageUrl?: string;
+  message: string;
+}
+
+export interface ImageConfig {
+  enabled: boolean;
 }
