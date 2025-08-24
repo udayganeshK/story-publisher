@@ -1,52 +1,62 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
-import { Story } from '@/types/api';
-import { storyService } from '@/services/api';
+import StoryFilters, { FilterOptions } from '@/components/StoryFilters';
+import { Story, Category } from '@/types/api';
+import { storyService, categoryService } from '@/services/api';
+import { processStories, formatDate } from '@/utils/storyFilters';
 
 const StoriesPage: React.FC = () => {
-  const [stories, setStories] = useState<Story[]>([]);
+  const [allStories, setAllStories] = useState<Story[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<FilterOptions>({
+    search: '',
+    categoryId: null,
+    sortBy: 'newest',
+    dateRange: 'all',
+    customStartDate: '',
+    customEndDate: '',
+  });
+
+  // Process stories based on current filters
+  const filteredAndSortedStories = useMemo(() => {
+    return processStories(allStories, filters);
+  }, [allStories, filters]);
 
   useEffect(() => {
-    const fetchStories = async () => {
+    const fetchData = async () => {
       try {
+        // Fetch categories first
+        const categoriesData = await categoryService.getAllCategories();
+        console.log('Loaded categories:', categoriesData);
+        console.log('Category data types:', categoriesData.map(c => ({ id: c.id, idType: typeof c.id, name: c.name })));
+        setCategories(categoriesData);
+
+        // Fetch all stories (we'll filter them client-side)
         const publicStories = await storyService.getAllPublicStoriesSimple();
-        // Ensure we always have an array
-        setStories(Array.isArray(publicStories) ? publicStories : []);
+        console.log('Loaded stories:', publicStories.length, 'stories');
+        console.log('Sample story categories with types:', publicStories.slice(0, 5).map(s => ({ 
+          title: s.title, 
+          category: s.category,
+          categoryIdType: s.category ? typeof s.category.id : 'no category'
+        })));
+        setAllStories(Array.isArray(publicStories) ? publicStories : []);
       } catch (err) {
-        setError('Failed to load stories');
-        console.error('Error fetching stories:', err);
-        // Set empty array on error
-        setStories([]);
+        setError('Failed to load data');
+        console.error('Error fetching data:', err);
+        setAllStories([]);
+        setCategories([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStories();
+    fetchData();
   }, []);
-
-  const formatDate = (dateInput: string | number[]) => {
-    let date: Date;
-    
-    if (Array.isArray(dateInput)) {
-      // Backend returns date as array: [year, month, day, hour, minute, second, nanosecond]
-      const [year, month, day, hour = 0, minute = 0, second = 0] = dateInput;
-      date = new Date(year, month - 1, day, hour, minute, second); // month is 0-indexed in JS
-    } else {
-      date = new Date(dateInput);
-    }
-    
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
 
   const generateExcerpt = (story: Story): string => {
     // If excerpt exists, use it
@@ -92,6 +102,17 @@ const StoriesPage: React.FC = () => {
           </p>
         </div>
 
+        {/* Story Filters */}
+        <StoryFilters
+          categories={categories}
+          filters={filters}
+          onFiltersChange={setFilters}
+          showCategoryFilter={true}
+          showSortOptions={true}
+          showDateFilter={true}
+          showSearch={true}
+        />
+
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -101,7 +122,7 @@ const StoriesPage: React.FC = () => {
           <div className="text-center py-12">
             <p className="text-red-600">{error}</p>
           </div>
-        ) : stories.length === 0 ? (
+        ) : filteredAndSortedStories.length === 0 ? (
           <div className="text-center py-12">
             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -119,7 +140,7 @@ const StoriesPage: React.FC = () => {
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {stories.map((story) => (
+            {filteredAndSortedStories.map((story) => (
               <article key={story.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-100 hover:border-gray-200">
                 {/* Cover Image or Placeholder */}
                 <div className="h-48 relative">
@@ -166,12 +187,27 @@ const StoriesPage: React.FC = () => {
                       </div>
                     </div>
                     
-                    {/* Story Status Badge */}
-                    {story.status === 'PUBLISHED' && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Published
-                      </span>
-                    )}
+                    <div className="flex items-center space-x-2">
+                      {/* Category Badge */}
+                      {story.category && (
+                        <span 
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold text-white border border-opacity-20 border-white shadow-sm"
+                          style={{ 
+                            backgroundColor: story.category.color || '#6B7280',
+                            filter: 'brightness(0.9) saturate(1.1)'
+                          }}
+                        >
+                          {story.category.name}
+                        </span>
+                      )}
+                      
+                      {/* Story Status Badge */}
+                      {story.status === 'PUBLISHED' && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Published
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Story Excerpt */}

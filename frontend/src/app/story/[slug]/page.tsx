@@ -3,14 +3,20 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
-import { Story } from '@/types/api';
-import { storyService } from '@/services/api';
+import TranslationComponent from '@/components/TranslationComponent';
+import { useAuth } from '@/contexts/AuthContext';
+import { Story, Category } from '@/types/api';
+import { storyService, categoryService } from '@/services/api';
 
 const StoryPage: React.FC = () => {
   const [story, setStory] = useState<Story | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
+  const [categoryUpdateLoading, setCategoryUpdateLoading] = useState(false);
   
+  const { isAuthenticated, user } = useAuth();
   const params = useParams();
   const router = useRouter();
 
@@ -43,8 +49,36 @@ const StoryPage: React.FC = () => {
       }
     };
 
+    const loadCategories = async () => {
+      if (isAuthenticated) {
+        try {
+          const categoriesData = await categoryService.getAllCategories();
+          setCategories(categoriesData);
+        } catch (err) {
+          console.error('Failed to load categories:', err);
+        }
+      }
+    };
+
     loadStory();
-  }, [params.slug]);
+    loadCategories();
+  }, [params.slug, isAuthenticated]);
+
+  const handleCategoryUpdate = async (categoryId: number | null) => {
+    if (!story || !isAuthenticated) return;
+    
+    setCategoryUpdateLoading(true);
+    try {
+      const updatedStory = await storyService.updateStoryCategory(story.id, categoryId);
+      setStory(updatedStory);
+      setShowCategorySelector(false);
+    } catch (err) {
+      console.error('Failed to update category:', err);
+      alert('Failed to update category. Please try again.');
+    } finally {
+      setCategoryUpdateLoading(false);
+    }
+  };
 
   const formatDate = (dateInput: string | number[]) => {
     let date: Date;
@@ -114,6 +148,8 @@ const StoryPage: React.FC = () => {
     );
   }
 
+  const isOwner = isAuthenticated && story.author.id === user?.id;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -156,6 +192,17 @@ const StoryPage: React.FC = () => {
                   <span>{formatDate(story.publishedAt || story.createdAt)}</span>
                   <span>•</span>
                   <span>{story.readTime || 1} min read</span>
+                  {story.category && (
+                    <>
+                      <span>•</span>
+                      <span 
+                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-white"
+                        style={{ backgroundColor: story.category.color || '#6B7280' }}
+                      >
+                        {story.category.name}
+                      </span>
+                    </>
+                  )}
                   {story.privacy === 'PRIVATE' && (
                     <>
                       <span>•</span>
@@ -175,6 +222,75 @@ const StoryPage: React.FC = () => {
 
           {/* Content */}
           <div className="px-8 py-8">
+            {/* Translation Component */}
+            <div className="mb-6 p-5 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-gray-200 shadow-sm">
+              <h3 className="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <span className="text-xl">🌍</span>
+                Translation & Language Detection
+              </h3>
+              <TranslationComponent 
+                text={story.content}
+                className="w-full"
+              />
+            </div>
+
+            {/* Category Assignment (Only for story owner) */}
+            {isOwner && (
+              <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-1">📝 Category Management</h3>
+                    <p className="text-xs text-gray-600">
+                      Current: {story.category?.name || 'Auto-categorized'}
+                      {story.category && (
+                        <span 
+                          className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-white ml-2"
+                          style={{ backgroundColor: story.category.color || '#6B7280' }}
+                        >
+                          {story.category.name}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowCategorySelector(!showCategorySelector)}
+                    className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-md transition-colors"
+                    disabled={categoryUpdateLoading}
+                  >
+                    {showCategorySelector ? 'Cancel' : 'Change Category'}
+                  </button>
+                </div>
+                
+                {showCategorySelector && (
+                  <div className="mt-4 space-y-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                      <button
+                        onClick={() => handleCategoryUpdate(null)}
+                        disabled={categoryUpdateLoading}
+                        className="p-2 text-xs text-center border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      >
+                        Auto-categorize
+                      </button>
+                      {categories.map((category) => (
+                        <button
+                          key={category.id}
+                          onClick={() => handleCategoryUpdate(category.id)}
+                          disabled={categoryUpdateLoading}
+                          className="p-2 text-xs text-center text-white rounded-md hover:opacity-80 transition-opacity disabled:opacity-50"
+                          style={{ backgroundColor: category.color || '#6B7280' }}
+                        >
+                          {category.name}
+                        </button>
+                      ))}
+                    </div>
+                    {categoryUpdateLoading && (
+                      <p className="text-xs text-blue-600">Updating category...</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            
             <div className="prose prose-lg max-w-none">
               {formatContent(story.content)}
             </div>

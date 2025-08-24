@@ -31,6 +31,13 @@ A modern, full-stack story publishing platform that enables users to create, sha
 - **Real-time Updates** - Changes reflect immediately across the platform
 - **Error Handling** - Comprehensive error messages and validation
 
+### 🎯 Smart Categorization
+- **Auto-Categorization** - Stories are automatically categorized based on content length
+- **Configurable Thresholds** - Customize category boundaries to match your needs
+- **Category Filtering** - Filter stories by category on the frontend
+- **Visual Indicators** - Color-coded category badges for easy identification
+- **Bulk Operations** - Mass import with automatic categorization
+
 ## 🏗️ Architecture
 
 ```
@@ -88,6 +95,33 @@ This will automatically:
 # 🚀 ALL SYSTEMS GO! 🚀
 # Application is ready at: http://localhost:3000
 ```
+
+## ⚙️ Configuration
+
+### 📊 Story Categorization
+
+The platform automatically categorizes stories based on content length. This is fully configurable:
+
+**Default Categories:**
+- **Short Stories**: < 300 characters
+- **Medium Stories**: 300-750 characters  
+- **Long Stories**: 750-1500 characters
+- **Dramas**: 1500+ characters
+
+**Customize Categories:**
+```properties
+# Add to backend/src/main/resources/application.properties
+app.categories.thresholds.shortMax=300
+app.categories.thresholds.mediumMax=750
+app.categories.thresholds.longMax=1500
+
+app.categories.short.name=Quick Reads
+app.categories.medium.name=Blog Posts
+app.categories.long.name=Articles
+app.categories.drama.name=Essays
+```
+
+📖 **Full configuration guide**: See [CATEGORY_CONFIGURATION.md](./CATEGORY_CONFIGURATION.md)
 
 ## 📚 API Documentation
 

@@ -66,9 +66,13 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/stories/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/tags/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/translations/languages").permitAll()  // Public translation info
+                .requestMatchers(HttpMethod.POST, "/translations/text").permitAll()  // Public text translation
+                .requestMatchers(HttpMethod.POST, "/translations/detect").permitAll()  // Public language detection
                 .requestMatchers(HttpMethod.POST, "/stories").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/stories/**").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/stories/**").authenticated()
+                .requestMatchers("/translations/**").authenticated()  // Other translation operations require auth
                 .anyRequest().authenticated()
             );
         

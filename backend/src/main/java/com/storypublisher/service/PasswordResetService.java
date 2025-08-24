@@ -1,11 +1,9 @@
 package com.storypublisher.service;
 
-import com.storypublisher.dto.ForgotPasswordRequest;
-import com.storypublisher.dto.ResetPasswordRequest;
-import com.storypublisher.model.PasswordResetToken;
-import com.storypublisher.model.User;
-import com.storypublisher.repository.PasswordResetTokenRepository;
-import com.storypublisher.repository.UserRepository;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +11,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
+import com.storypublisher.dto.ForgotPasswordRequest;
+import com.storypublisher.dto.ResetPasswordRequest;
+import com.storypublisher.model.PasswordResetToken;
+import com.storypublisher.model.User;
+import com.storypublisher.repository.PasswordResetTokenRepository;
+import com.storypublisher.repository.UserRepository;
 
 @Service
 @Transactional

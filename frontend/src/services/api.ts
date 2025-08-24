@@ -3,11 +3,12 @@ import {
   LoginRequest,
   SignupRequest,
   JwtAuthenticationResponse,
-  User,
   Story,
+  Category,
   CreateStoryRequest,
   UpdateStoryRequest,
-  PageableResponse,
+  Translation,
+  TranslationResponse,
 } from '@/types/api';
 
 export const authService = {
@@ -29,12 +30,12 @@ export const storyService = {
   },
 
   async getAllPublicStoriesSimple(): Promise<Story[]> {
-    const response = await api.get('/stories?size=200'); // Get up to 200 stories
+    const response = await api.get('/stories?size=500'); // Get up to 500 stories
     return response.data.content; // Extract content array from paginated response
   },
 
   async getMyStories(): Promise<Story[]> {
-    const response = await api.get('/stories/my?size=200'); // Get up to 200 user stories
+    const response = await api.get('/stories/my?size=500'); // Get up to 500 user stories
     return response.data.content; // Extract content array from paginated response
   },
 
@@ -72,6 +73,33 @@ export const storyService = {
     const response = await api.post(`/stories/${id}/unpublish`);
     return response.data;
   },
+  async getStoriesByCategory(categoryId: number, page: number = 0, size: number = 10): Promise<{ content: Story[], totalElements: number, totalPages: number }> {
+    const response = await api.get(`/stories/category/${categoryId}?page=${page}&size=${size}`);
+    return response.data;
+  },
+
+  async updateStoryCategory(id: number, categoryId: number | null): Promise<Story> {
+    const params = categoryId ? `?categoryId=${categoryId}` : '';
+    const response = await api.put(`/stories/${id}/category${params}`);
+    return response.data;
+  },
+};
+
+export const categoryService = {
+  async getAllCategories(): Promise<Category[]> {
+    const response = await api.get('/categories');
+    return response.data;
+  },
+
+  async getCategoryById(id: number): Promise<Category> {
+    const response = await api.get(`/categories/${id}`);
+    return response.data;
+  },
+
+  async getCategoryBySlug(slug: string): Promise<Category> {
+    const response = await api.get(`/categories/slug/${slug}`);
+    return response.data;
+  },
 };
 
 export const imageService = {
@@ -89,6 +117,39 @@ export const imageService = {
         'Content-Type': 'multipart/form-data',
       },
     });
+    return response.data;
+  },
+};
+
+export const translationService = {
+  async translateText(text: string, sourceLanguage?: string, targetLanguage: string = 'en'): Promise<TranslationResponse> {
+    const response = await api.post('/translations/text', {
+      text,
+      sourceLanguage,
+      targetLanguage
+    });
+    return response.data;
+  },
+
+  async translateStory(storyId: number, targetLanguage: string = 'en'): Promise<{ translationId: number; sourceLanguage: string; targetLanguage: string; translatedContent: string; storyId: number }> {
+    const response = await api.post(`/translations/story/${storyId}`, {
+      targetLanguage
+    });
+    return response.data;
+  },
+
+  async getStoryTranslations(storyId: number): Promise<{ translations: Translation[]; count: number }> {
+    const response = await api.get(`/translations/story/${storyId}`);
+    return response.data;
+  },
+
+  async getSupportedLanguages(): Promise<{ supportedLanguages: string[]; languageNames: Record<string, string> }> {
+    const response = await api.get('/translations/languages');
+    return response.data;
+  },
+
+  async detectLanguage(text: string): Promise<{ detectedLanguage: string; text: string }> {
+    const response = await api.post('/translations/detect', { text });
     return response.data;
   },
 };

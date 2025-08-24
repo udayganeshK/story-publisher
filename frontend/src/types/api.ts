@@ -11,6 +11,16 @@ export interface User {
   updatedAt: string | number[];
 }
 
+export interface Category {
+  id: number;
+  name: string;
+  description?: string;
+  slug: string;
+  color?: string;
+  createdAt: string | number[];
+  updatedAt: string | number[];
+}
+
 export interface Story {
   id: number;
   title: string;
@@ -21,6 +31,7 @@ export interface Story {
   privacy: 'PUBLIC' | 'PRIVATE';
   coverImageUrl?: string;
   author: User;
+  category?: Category;
   readTime: number;
   viewCount: number;
   likeCount: number;
@@ -56,6 +67,7 @@ export interface CreateStoryRequest {
   status: 'DRAFT' | 'PUBLISHED';
   privacy: 'PUBLIC' | 'PRIVATE';
   coverImageUrl?: string;
+  categoryId?: number;
 }
 
 export interface UpdateStoryRequest {
@@ -64,6 +76,7 @@ export interface UpdateStoryRequest {
   status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
   privacy?: 'PUBLIC' | 'PRIVATE';
   coverImageUrl?: string;
+  categoryId?: number;
 }
 
 export interface ApiError {
@@ -110,4 +123,31 @@ export interface ImageUploadResponse {
 
 export interface ImageConfig {
   enabled: boolean;
+}
+
+// Translation interfaces
+export interface Translation {
+  id: number;
+  sourceContent: string;
+  translatedContent: string;
+  sourceLanguage: string;
+  targetLanguage: string;
+  contentHash: string;
+  translationProvider?: string;
+  createdAt: string | number[];
+  expiresAt?: string | number[];
+  story?: Story;
+}
+
+export interface TranslationRequest {
+  text: string;
+  sourceLanguage?: string;
+  targetLanguage: string;
+}
+
+export interface TranslationResponse {
+  translatedText: string;
+  sourceLanguage: string;
+  targetLanguage: string;
+  originalText: string;
 }

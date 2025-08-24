@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Story, CreateStoryRequest, UpdateStoryRequest } from '@/types/api';
-import { storyService, imageService } from '@/services/api';
+import { Story, CreateStoryRequest, UpdateStoryRequest, Category } from '@/types/api';
+import { storyService, imageService, categoryService } from '@/services/api';
 
 const WritePage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -14,6 +14,7 @@ const WritePage: React.FC = () => {
     status: 'DRAFT' as 'DRAFT' | 'PUBLISHED',
     privacy: 'PUBLIC' as 'PUBLIC' | 'PRIVATE',
     coverImageUrl: '',
+    categoryId: undefined as number | undefined,
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -23,6 +24,8 @@ const WritePage: React.FC = () => {
   const [imageUploadEnabled, setImageUploadEnabled] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   
   const { isAuthenticated } = useAuth();
   const router = useRouter();
@@ -50,6 +53,7 @@ const WritePage: React.FC = () => {
             status: story.status === 'ARCHIVED' ? 'DRAFT' : story.status as 'DRAFT' | 'PUBLISHED',
             privacy: story.privacy,
             coverImageUrl: story.coverImageUrl || '',
+            categoryId: story.category?.id,
           });
           if (story.coverImageUrl) {
             setImagePreview(story.coverImageUrl);
@@ -76,13 +80,27 @@ const WritePage: React.FC = () => {
       }
     };
     
+    // Load categories
+    const loadCategories = async () => {
+      try {
+        const categoriesData = await categoryService.getAllCategories();
+        setCategories(categoriesData);
+      } catch (err) {
+        console.error('Failed to load categories:', err);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    
     checkImageConfig();
+    loadCategories();
   }, [isAuthenticated, router, params.id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: name === 'categoryId' ? (value === '' ? undefined : parseInt(value, 10)) : value,
     });
   };
 
@@ -276,7 +294,7 @@ const WritePage: React.FC = () => {
             )}
 
             {/* Settings */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label htmlFor="privacy" className="block text-sm font-medium text-gray-700 mb-2">
                   Privacy
@@ -307,6 +325,30 @@ const WritePage: React.FC = () => {
                   <option value="DRAFT">Draft</option>
                   <option value="PUBLISHED">Published</option>
                 </select>
+              </div>
+
+              <div>
+                <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
+                  Category
+                </label>
+                <select
+                  id="categoryId"
+                  name="categoryId"
+                  value={formData.categoryId || ''}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  disabled={categoriesLoading}
+                >
+                  <option value="">Auto-categorize</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                {categoriesLoading && (
+                  <p className="text-xs text-gray-500 mt-1">Loading categories...</p>
+                )}
               </div>
             </div>
 

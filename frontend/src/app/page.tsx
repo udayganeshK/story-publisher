@@ -199,9 +199,20 @@ const HomePage: React.FC = () => {
                         </p>
                       </div>
                     </div>
-                    <span className="text-xs text-gray-400">
-                      {story.readTime || 5} min
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      {/* Category Badge */}
+                      {story.category && (
+                        <span 
+                          className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-white"
+                          style={{ backgroundColor: story.category.color || '#6B7280' }}
+                        >
+                          {story.category.name}
+                        </span>
+                      )}
+                      <span className="text-xs text-gray-400">
+                        {story.readTime || 5} min
+                      </span>
+                    </div>
                   </div>
 
                   {/* Story Excerpt */}

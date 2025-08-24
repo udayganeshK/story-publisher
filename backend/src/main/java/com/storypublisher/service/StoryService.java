@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.storypublisher.dto.StoryResponse;
 import com.storypublisher.exception.StoryNotFoundException;
+import com.storypublisher.model.Category;
 import com.storypublisher.model.Story;
 import com.storypublisher.model.StoryPrivacy;
 import com.storypublisher.model.StoryStatus;
@@ -27,6 +28,9 @@ public class StoryService {
     
     @Autowired
     private ImageUploadService imageUploadService;
+    
+    @Autowired
+    private CategoryService categoryService;
     
     public Page<Story> getStoriesByAuthor(User author, Pageable pageable) {
         return storyRepository.findByAuthor(author, pageable);
@@ -70,6 +74,14 @@ public class StoryService {
         story.setLikeCount(0L);
         story.setCommentCount(0L);
         
+        // Auto-categorize based on content length if no category is set
+        if (story.getCategory() == null) {
+            Category autoCategory = categoryService.getCategoryByWordCount(story.getContent());
+            if (autoCategory != null) {
+                story.setCategory(autoCategory);
+            }
+        }
+        
         return storyRepository.save(story);
     }
     
@@ -94,6 +106,14 @@ public class StoryService {
         existingStory.setCoverImageUrl(updatedStory.getCoverImageUrl());
         existingStory.setPrivacy(updatedStory.getPrivacy());
         existingStory.setCategory(updatedStory.getCategory());
+        
+        // Auto-categorize if no explicit category is provided and content changed
+        if (updatedStory.getCategory() == null) {
+            Category autoCategory = categoryService.getCategoryByWordCount(updatedStory.getContent());
+            if (autoCategory != null) {
+                existingStory.setCategory(autoCategory);
+            }
+        }
         
         return storyRepository.save(existingStory);
     }
@@ -166,5 +186,23 @@ public class StoryService {
                     return storyRepository.save(story);
                 })
                 .orElseThrow(() -> new StoryNotFoundException("Published story not found with slug: " + slug));
+    }
+    
+    // Update story category (allows users to assign categories to their own stories)
+    public Story updateStoryCategory(Long storyId, Long categoryId, User currentUser) {
+        Story story = storyRepository.findByIdAndAuthor(storyId, currentUser)
+                .orElseThrow(() -> new RuntimeException("Story not found or access denied"));
+        
+        // If categoryId is null, remove the category (set to null)
+        if (categoryId == null) {
+            story.setCategory(null);
+        } else {
+            // Validate that the category exists
+            Category category = categoryService.getCategoryById(categoryId)
+                    .orElseThrow(() -> new RuntimeException("Category not found with id: " + categoryId));
+            story.setCategory(category);
+        }
+        
+        return storyRepository.save(story);
     }
 }

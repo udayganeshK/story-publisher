@@ -1,16 +1,16 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '@/types/api';
-import { authService } from '@/services/api';
+import { User, JwtAuthenticationResponse } from '@/types/api';
 import Cookies from 'js-cookie';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (response: any) => void;
+  login: (response: JwtAuthenticationResponse) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  getToken: () => string | undefined;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -65,7 +65,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initAuth();
   }, []);
 
-  const login = async (response: any) => {
+  const login = async (response: JwtAuthenticationResponse) => {
     // Extract token from the response
     const token = response.accessToken;
     Cookies.set('auth_token', token, { expires: 7 }); // 7 days
@@ -117,12 +117,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     window.location.href = '/';
   };
 
+  const getToken = () => {
+    return Cookies.get('auth_token');
+  };
+
   const value: AuthContextType = {
     user,
     loading,
     login,
     logout,
     isAuthenticated: !!user,
+    getToken,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

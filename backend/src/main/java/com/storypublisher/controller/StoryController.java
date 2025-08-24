@@ -135,4 +135,32 @@ public class StoryController {
         Page<StoryResponse> stories = storyService.searchPublicStoriesAsResponse(query, pageable);
         return ResponseEntity.ok(stories);
     }
+    
+    // Get stories by category
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<Page<Story>> getStoriesByCategory(
+            @PathVariable Long categoryId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "publishedAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        
+        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
+            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        Page<Story> stories = storyService.getStoriesByCategory(categoryId, pageable);
+        return ResponseEntity.ok(stories);
+    }
+    
+    // Update story category (dedicated endpoint for category assignment)
+    @PutMapping("/{id}/category")
+    public ResponseEntity<Story> updateStoryCategory(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long categoryId,
+            @AuthenticationPrincipal User currentUser) {
+        
+        Story story = storyService.updateStoryCategory(id, categoryId, currentUser);
+        return ResponseEntity.ok(story);
+    }
 }

@@ -3,6 +3,7 @@ package com.storypublisher.dto;
 import com.storypublisher.model.Story;
 import com.storypublisher.model.StoryPrivacy;
 import com.storypublisher.model.StoryStatus;
+import com.storypublisher.model.Category;
 import java.time.LocalDateTime;
 
 public class StoryResponse {
@@ -15,6 +16,7 @@ public class StoryResponse {
     private StoryStatus status;
     private StoryPrivacy privacy;
     private UserResponse author;
+    private Category category;
     private Integer readTime;
     private Long viewCount;
     private Long likeCount;
@@ -36,6 +38,7 @@ public class StoryResponse {
         this.status = story.getStatus();
         this.privacy = story.getPrivacy();
         this.author = story.getAuthor() != null ? new UserResponse(story.getAuthor()) : null;
+        this.category = story.getCategory();
         this.readTime = story.getReadTime();
         this.viewCount = story.getViewCount();
         this.likeCount = story.getLikeCount();
@@ -117,6 +120,14 @@ public class StoryResponse {
 
     public void setAuthor(UserResponse author) {
         this.author = author;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
     }
 
     public Integer getReadTime() {

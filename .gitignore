@@ -88,11 +88,42 @@ NOTES.txt
 
 # Sensitive files - AWS & SSH keys
 *.pem
+*.key
 *_rsa
 *_rsa.pub
+git_rsa
+git_rsa.pub
+story-publisher-key.pem
+storypublisher-key.pem
+
+# AWS and deployment files with potential secrets
 *.pkg
 AWSCLIV2.pkg
 
 # Local application properties with credentials
 application-local.properties
 application-dev.properties
+
+# Image uploads directory
+uploads/
+**/uploads/**
+
+# Backup files and database dumps
+*.sql
+*.backup
+*.dump
+
+# Python cache and environments
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+
+# Bulk import scripts and data
+bulk_import_stories.py
+bulk-stories.zip
+test-stories.zip
+
+# Security scan cache
+.cache_ggshield

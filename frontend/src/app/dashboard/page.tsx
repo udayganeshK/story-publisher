@@ -1,19 +1,35 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import StoryFilters, { FilterOptions } from '@/components/StoryFilters';
 import { useAuth } from '@/contexts/AuthContext';
-import { Story } from '@/types/api';
-import { storyService } from '@/services/api';
+import { Story, Category } from '@/types/api';
+import { storyService, categoryService } from '@/services/api';
+import { processStories, formatDateShort } from '@/utils/storyFilters';
 
 const DashboardPage: React.FC = () => {
-  const [stories, setStories] = useState<Story[]>([]);
+  const [allStories, setAllStories] = useState<Story[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
+  const [filters, setFilters] = useState<FilterOptions>({
+    search: '',
+    categoryId: null,
+    sortBy: 'newest',
+    dateRange: 'all',
+    customStartDate: '',
+    customEndDate: '',
+  });
+
+  // Process stories based on current filters
+  const filteredAndSortedStories = useMemo(() => {
+    return processStories(allStories, filters);
+  }, [allStories, filters]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -21,22 +37,25 @@ const DashboardPage: React.FC = () => {
       return;
     }
 
-    const fetchMyStories = async () => {
+    const fetchData = async () => {
       try {
+        // Fetch categories
+        const categoriesData = await categoryService.getAllCategories();
+        setCategories(categoriesData);
+
+        // Fetch my stories
         const myStories = await storyService.getMyStories();
-        // Ensure we always have an array
-        setStories(Array.isArray(myStories) ? myStories : []);
+        setAllStories(Array.isArray(myStories) ? myStories : []);
       } catch (err) {
         setError('Failed to load your stories');
         console.error('Error fetching stories:', err);
-        // Set empty array on error
-        setStories([]);
+        setAllStories([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMyStories();
+    fetchData();
   }, [isAuthenticated, router]);
 
   const handleDeleteStory = async (storyId: number) => {
@@ -46,7 +65,7 @@ const DashboardPage: React.FC = () => {
 
     try {
       await storyService.deleteStory(storyId);
-      setStories(stories.filter(story => story.id !== storyId));
+      setAllStories(allStories.filter(story => story.id !== storyId));
     } catch (err) {
       console.error('Error deleting story:', err);
       alert('Failed to delete story');
@@ -62,29 +81,21 @@ const DashboardPage: React.FC = () => {
         updatedStory = await storyService.publishStory(story.id);
       }
       
-      setStories(stories.map(s => s.id === story.id ? updatedStory : s));
+      setAllStories(allStories.map(s => s.id === story.id ? updatedStory : s));
     } catch (err) {
       console.error('Error toggling publish status:', err);
       alert('Failed to update story status');
     }
   };
 
-  const formatDate = (dateInput: string | number[]) => {
-    let date: Date;
-    
-    if (Array.isArray(dateInput)) {
-      // Backend returns date as array: [year, month, day, hour, minute, second, nanosecond]
-      const [year, month, day, hour = 0, minute = 0, second = 0] = dateInput;
-      date = new Date(year, month - 1, day, hour, minute, second); // month is 0-indexed in JS
-    } else {
-      date = new Date(dateInput);
+  const handleCategoryChange = async (storyId: number, categoryId: number | null) => {
+    try {
+      const updatedStory = await storyService.updateStoryCategory(storyId, categoryId);
+      setAllStories(allStories.map(s => s.id === storyId ? updatedStory : s));
+    } catch (err) {
+      console.error('Error updating story category:', err);
+      alert('Failed to update story category');
     }
-    
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -115,22 +126,43 @@ const DashboardPage: React.FC = () => {
             Welcome back, {user?.firstName}!
           </h1>
           <p className="mt-2 text-gray-600">
-            Manage your stories and see how they're performing.
+            Manage your stories and see how they&apos;re performing.
           </p>
         </div>
 
         {/* Quick Actions */}
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold text-gray-900">Your Stories</h2>
-            <Link
-              href="/write"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-            >
-              Write New Story
-            </Link>
+            <div className="flex gap-3">
+              <Link
+                href="/bulk-import"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Bulk Import
+              </Link>
+              <Link
+                href="/write"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Write New Story
+              </Link>
+            </div>
           </div>
         </div>
+
+        {/* Story Filters */}
+        {!loading && allStories.length > 0 && (
+          <StoryFilters
+            categories={categories}
+            filters={filters}
+            onFiltersChange={setFilters}
+            showCategoryFilter={true}
+            showSortOptions={true}
+            showDateFilter={true}
+            showSearch={true}
+          />
+        )}
 
         {/* Stories List */}
         {loading ? (
@@ -142,7 +174,7 @@ const DashboardPage: React.FC = () => {
           <div className="text-center py-12">
             <p className="text-red-600">{error}</p>
           </div>
-        ) : stories.length === 0 ? (
+        ) : filteredAndSortedStories.length === 0 ? (
           <div className="text-center py-12">
             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -160,12 +192,12 @@ const DashboardPage: React.FC = () => {
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {stories.map((story) => (
+            {filteredAndSortedStories.map((story) => (
               <article key={story.id} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-lg transition-all duration-300">
                 {/* Story Header */}
                 <div className="h-32 bg-gradient-to-br from-gray-50 to-gray-100 relative">
                   <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
-                    <div className="flex space-x-2">
+                    <div className="flex flex-wrap gap-2">
                       <span className={getStatusBadge(story.status)}>
                         {story.status}
                       </span>
@@ -175,6 +207,18 @@ const DashboardPage: React.FC = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                           </svg>
                           Private
+                        </span>
+                      )}
+                      {/* Category Badge */}
+                      {story.category && (
+                        <span 
+                          className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full text-white border border-opacity-20 border-white shadow-sm"
+                          style={{ 
+                            backgroundColor: story.category.color || '#6B7280',
+                            filter: 'brightness(0.9) saturate(1.1)'
+                          }}
+                        >
+                          {story.category.name}
                         </span>
                       )}
                     </div>
@@ -196,7 +240,7 @@ const DashboardPage: React.FC = () => {
 
                   {/* Story Metadata */}
                   <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                    <span>Created {formatDate(story.createdAt)}</span>
+                    <span>Created {formatDateShort(story.createdAt)}</span>
                     <div className="flex items-center space-x-3">
                       <span className="flex items-center">
                         <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -218,6 +262,34 @@ const DashboardPage: React.FC = () => {
                         {story.commentCount || 0}
                       </span>
                       <span>{story.readTime || 5} min</span>
+                    </div>
+                  </div>
+
+                  {/* Category Selection */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                    <div className="relative">
+                      <select
+                        value={story.category?.id || ''}
+                        onChange={(e) => handleCategoryChange(story.id, e.target.value ? parseInt(e.target.value) : null)}
+                        className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 pr-10 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm hover:border-gray-400 transition-colors font-medium"
+                        style={{
+                          color: story.category?.color || '#374151'
+                        }}
+                      >
+                        <option value="" style={{ color: '#6B7280' }}>Select Category</option>
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id} style={{ color: category.color }}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                      {story.category && (
+                        <div 
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                          style={{ backgroundColor: story.category.color }}
+                        />
+                      )}
                     </div>
                   </div>
 
